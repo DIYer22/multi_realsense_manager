@@ -4,9 +4,8 @@ import os
 here = os.path.dirname(os.path.realpath(__file__))
 
 requirements = []
-if os.path.isfile("requirements.txt"):
-    with open("requirements.txt") as f:
-        requirements = [line.strip() for line in f]
+with open("requirements.txt") as f:
+    requirements = [line.strip() for line in f]
 
 info = {}
 with open(os.path.join(here, "multi_realsense_manager", "__info__.py")) as f:
