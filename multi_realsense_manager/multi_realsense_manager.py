@@ -178,7 +178,7 @@ class RealsenseForVis(RealsenseCamera):
 class MultiRealsenseManger(dict):
     def __init__(
         self,
-        RealsenseMetaClass=RealsenseCamera,
+        MetaRealsenseClass=RealsenseCamera,
         init_args=None,
         init_kwargs=None,
         dummy=False,
@@ -190,12 +190,12 @@ class MultiRealsenseManger(dict):
 
         Parameters
         ----------
-        RealsenseMetaClass : TYPE, optional
+        MetaRealsenseClass : TYPE, optional
             Realsense class. The default is RealsenseCamera.
         init_args : tuple, optional
-            Init args for RealsenseMetaClass. The default is [].
+            Init args for MetaRealsenseClass. The default is [].
         init_kwargs : dict, optional
-            Init kwargs for RealsenseMetaClass. The default is {}.
+            Init kwargs for MetaRealsenseClass. The default is {}.
         dummy : bool, optional
             If True, using multiprocess.dummy which is multi-threading. 
             The default is False.
@@ -210,7 +210,7 @@ class MultiRealsenseManger(dict):
             _kwargs = {} if init_kwargs is None else init_kwargs.copy()
             _kwargs.update(snid=snid)
             self[snid] = class_as_process(
-                cls=RealsenseMetaClass,
+                cls=MetaRealsenseClass,
                 init_args=init_args,
                 init_kwargs=_kwargs,
                 dummy=dummy,
@@ -268,9 +268,9 @@ if __name__ == "__main__":
     # Example code
     snids = MultiRealsenseManger.get_all_snids()
     print("All realsense snids:", snids)
-    RealsenseMetaClass = RealsenseForVis
+    MetaRealsenseClass = RealsenseForVis
     FRAME_NUM = 50
-    with RealsenseMetaClass(snids[0]) as rc:
+    with MetaRealsenseClass(snids[0]) as rc:
         print(f"imshow first realsense's image, {FRAME_NUM} frames")
         for i in range(FRAME_NUM):
             print(f"{i}/{FRAME_NUM}")
@@ -279,7 +279,7 @@ if __name__ == "__main__":
             vis = merge_depth_image_for_vis(data)
             cv2.imshow("first camera", vis[..., ::-1])
 
-    with MultiRealsenseManger(RealsenseMetaClass) as mrm:
+    with MultiRealsenseManger(MetaRealsenseClass) as mrm:
         for snid in mrm:
             for i in range(FRAME_NUM):
                 print(f"snid: {snid}, {i}/{FRAME_NUM}")
