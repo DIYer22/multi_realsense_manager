@@ -3,7 +3,6 @@ import os
 
 here = os.path.dirname(os.path.realpath(__file__))
 
-requirements = []
 with open("requirements.txt") as f:
     requirements = [line.strip() for line in f]
 
@@ -21,7 +20,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url=info["__url__"],
     packages=setuptools.find_packages(),
-    python_requires=">=3.5",
+    python_requires=">=3.6",
     install_requires=requirements,
     classifiers=[
         "Programming Language :: Python :: 3",
