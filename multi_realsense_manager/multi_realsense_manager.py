@@ -33,6 +33,9 @@ class RealsenseCamera:
     def get_frameset(self):
         get_frameset = getattr(self.pipeline, self.get_frame_method)
         frameset = get_frameset()
+        if self.get_frame_method == "wait_for_frames":
+            # look like first wait_for_frames is still exist frame.
+            frameset = get_frameset()
         return frameset
 
     def set_config_and_option(self):
