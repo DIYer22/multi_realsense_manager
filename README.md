@@ -14,8 +14,13 @@
 
 ## 使用方式
 
-Demo:
+1. Demo:
 ```
 python multi_realsense_manager/multi_realsense_manager.py
 ```
 使用说明见 ["multi_realsense_manager/multi_realsense_manager.py"](multi_realsense_manager/multi_realsense_manager.py#L248-301) 代码里的注释
+
+2. 查看 realsense 个数和 snid
+```
+python -c 'print(__import__("multi_realsense_manager").MultiRealsenseManger.get_all_snids())'
+```
