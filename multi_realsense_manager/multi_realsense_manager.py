@@ -19,6 +19,7 @@ class RealsenseCamera:
         self.snid = snid
         self.get_frame_method = get_frame_method
         self.try_num = try_num
+        time.sleep(0.1 * np.random.random())
         self.try_run(self.set_config_and_option)
 
     def robust_get_data(self):
@@ -104,6 +105,13 @@ class RealsenseCamera:
                 print(e)
                 # self.hardware_reset()
                 try:
+                    if "device" not in self.__dict__:
+                        devices = list(rs.context().devices)
+                        filter_devices = [d for d in devices if self.snid in str(d)]
+                        assert (
+                            len(filter_devices) == 1
+                        ), f"S/N: {self.snid} not in {devices}"
+                        self.device = filter_devices[0]
                     self.device.hardware_reset()
                     time.sleep(1.5)
                     """
