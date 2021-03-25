@@ -234,6 +234,9 @@ class MultiRealsenseManger(dict):
         [process.join() for process in self.values()]
 
     def __getattr__(self, key):
+        if not callable(getattr(next(iter(self.values())), key)):
+            return {k: getattr(v, key) for k, v in self.items()}
+
         def func(*args, **kwargs):
             threads = []
             res = {}
