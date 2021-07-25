@@ -191,6 +191,7 @@ class MultiRealsenseManger(dict):
         init_kwargs=None,
         dummy=False,
         snids=None,
+        init_gap_time=1,
     ):
         """
         Multi-realsense manger with multi-processing
@@ -209,12 +210,15 @@ class MultiRealsenseManger(dict):
             The default is False.
         snids : list of str, optional
             List of snids. The default is self.get_all_snids().
+        init_gap_time: int, default 1
+            init_gap_time
         """
 
         super().__init__()
         if snids is None:
             snids = MultiRealsenseManger.get_all_snids()
         for snid in snids:
+            time.sleep(init_gap_time)
             _kwargs = {} if init_kwargs is None else init_kwargs.copy()
             _kwargs.update(snid=snid)
             self[snid] = class_as_process(
