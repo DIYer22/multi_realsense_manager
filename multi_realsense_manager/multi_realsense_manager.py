@@ -4,7 +4,7 @@ import cv2
 import time
 import numpy as np
 import pyrealsense2 as rs
-from threading import Timer
+from threading import Timer, Lock
 
 try:
     from class_as_process import class_as_process
@@ -16,11 +16,15 @@ except ModuleNotFoundError:
 
 class RealsenseCamera:
     def __init__(self, snid, get_frame_method="wait_for_frames", try_num=-1):
+        self.lock = Lock()
         self.snid = snid
         self.get_frame_method = get_frame_method
         self.try_num = try_num
         time.sleep(0.1 * np.random.random())
         self.try_run(self.set_config_and_option)
+
+        self.spatial_filter = None
+        self.temporal_filter = None
 
     def robust_get_data(self):
         """may_has_delay"""
@@ -32,38 +36,47 @@ class RealsenseCamera:
         return data
 
     def get_frameset(self):
-        get_frameset = getattr(self.pipeline, self.get_frame_method)
-        frameset = get_frameset()
-        return frameset
+        with self.lock:
+            get_frameset = getattr(self.pipeline, self.get_frame_method)
+            frameset = get_frameset()
+            return frameset
 
     def set_config_and_option(self):
-        # set config
-        config = rs.config()
-        config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 6)
-        config.enable_stream(rs.stream.color, 1280, 720, rs.format.rgb8, 6)
-        config.enable_device(self.snid)
+        with self.lock:
+            # set config
+            config = rs.config()
+            config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 6)
+            config.enable_stream(rs.stream.color, 1280, 720, rs.format.rgb8, 6)
+            config.enable_device(self.snid)
 
-        # set pipline
-        self.pipeline = rs.pipeline()
-        self.profile = self.pipeline.start(config)
-        self.device = self.profile.get_device()
+            # set pipline
+            self.pipeline = rs.pipeline()
+            self.profile = self.pipeline.start(config)
+            self.device = self.profile.get_device()
 
-        # set depth option
-        depth_sensor = self.depth_sensor = self.device.first_depth_sensor()
+            # set depth option
+            depth_sensor = self.depth_sensor = self.device.first_depth_sensor()
 
-        # set "High Accuracy" depth mode
-        depth_sensor.set_option(rs.option.visual_preset, 3)
+            # set "High Accuracy" depth mode
+            depth_sensor.set_option(rs.option.visual_preset, 3)
 
-        # set_laser_power
-        power_rate = 1
-        depth_sensor.set_option(
-            rs.option.laser_power,
-            int(depth_sensor.get_option_range(rs.option.laser_power).max * power_rate),
-        )
+            # set_laser_power
+            power_rate = 1
+            depth_sensor.set_option(
+                rs.option.laser_power,
+                int(
+                    depth_sensor.get_option_range(rs.option.laser_power).max
+                    * power_rate
+                ),
+            )
+
+            # set postprocess
+            # self.spatial_filter = self.default_spatial_filter
+            # self.temporal_filter = self.default_temporal_filter
 
     align = rs.align(rs.stream.color)
-    spatial = rs.spatial_filter()
-    temporal = rs.temporal_filter()
+    default_spatial_filter = rs.spatial_filter()
+    default_temporal_filter = rs.temporal_filter()
 
     def post_processing(self, frameset):
         streams = self.profile.get_streams()
@@ -78,8 +91,10 @@ class RealsenseCamera:
             else:
                 frame = frameset.first_or_default(stream.stream_type())
                 if stream.stream_type() == rs.stream.depth:
-                    frame = self.spatial.process(frame)
-                    frame = self.temporal.process(frame)
+                    if self.spatial_filter:
+                        frame = self.spatial_filter.process(frame)
+                    if self.temporal_filter:
+                        frame = self.temporal_filter.process(frame)
             data[key] = self.frame_to_numpy(frame)
         return data
 
