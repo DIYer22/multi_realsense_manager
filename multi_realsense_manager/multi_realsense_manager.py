@@ -15,7 +15,9 @@ except ModuleNotFoundError:
 
 
 class RealsenseCamera:
-    def __init__(self, snid, get_frame_method="wait_for_frames", try_num=-1):
+    def __init__(self, snid=None, get_frame_method="wait_for_frames", try_num=-1):
+        if snid is None:
+            snid = self.get_all_snids()[0]
         self.lock = Lock()
         self.snid = snid
         self.get_frame_method = get_frame_method
@@ -47,12 +49,15 @@ class RealsenseCamera:
             config = rs.config()
             config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 6)
             config.enable_stream(rs.stream.color, 1280, 720, rs.format.rgb8, 6)
+            # config.enable_stream(rs.stream.infrared, 1, 1280, 720, rs.format.y8, 6)
+            # config.enable_stream(rs.stream.infrared, 2, 1280, 720, rs.format.y8, 6)
             config.enable_device(self.snid)
 
             # set pipline
             self.pipeline = rs.pipeline()
             self.profile = self.pipeline.start(config)
             self.device = self.profile.get_device()
+            self.color_sensor = self.device.query_sensors()[1]
 
             # set depth option
             depth_sensor = self.depth_sensor = self.device.first_depth_sensor()
@@ -82,6 +87,7 @@ class RealsenseCamera:
         streams = self.profile.get_streams()
         assert frameset.size() == len(streams)
         data = {}
+        # Reproject depth from ir cam to RGB cam
         frameset = self.align.process(frameset)
         for stream in streams:
             key = str(stream.stream_type()).replace("stream.", "")
@@ -95,6 +101,7 @@ class RealsenseCamera:
                         frame = self.spatial_filter.process(frame)
                     if self.temporal_filter:
                         frame = self.temporal_filter.process(frame)
+                # data[key+"_info"] = frame.get_profile()
             data[key] = self.frame_to_numpy(frame)
         return data
 
@@ -152,6 +159,14 @@ class RealsenseCamera:
         time.sleep(1.5)
         self.set_config_and_option()
 
+    def set_exposure(self, t, camera="color"):
+        if camera == "color":
+            device = self.color_sensor
+        if camera == "depth":
+            device = self.depth_sensor
+        t_ms = int(round(t * 1000))
+        device.set_option(rs.option.exposure, t_ms)
+
     @classmethod
     def from_camera_idx(cls, idx=0):
         snids = MultiRealsenseManger.get_all_snids()
@@ -167,6 +182,27 @@ class RealsenseCamera:
             if "realsense" in d.get_info(rs.camera_info.name).lower():
                 snids.append(d.get_info(rs.camera_info.serial_number))
         return sorted(snids)
+
+    def _get_stream(self, camera="color"):
+        for stream in self.profile.get_streams():
+            if camera == "color" and stream.format() == rs.format.rgb8:
+                break
+            if camera == "depth" and stream.format() == rs.format.z16:
+                break
+        return stream
+
+    def get_intrinsic(self, camera="color"):
+        stream = self._get_stream(camera)
+        rsi = stream.as_video_stream_profile().get_intrinsics()
+        intrinsic = dict(
+            fx=rsi.fx,
+            fy=rsi.fy,
+            cx=rsi.ppx,
+            cy=rsi.ppy,
+            D=[rsi.coeffs],
+            xy=(rsi.width, rsi.height),
+        )
+        return intrinsic
 
     def load_settings_json(self, json_path):
         with open(json_path, "r") as file:
