@@ -15,13 +15,14 @@ except ModuleNotFoundError:
 
 
 class RealsenseCamera:
-    def __init__(self, snid=None, get_frame_method="wait_for_frames", try_num=-1):
+    def __init__(self, snid=None, get_frame_method="wait_for_frames", try_num=-1, fps=6):
         if snid is None:
             snid = self.get_all_snids()[0]
         self.lock = Lock()
         self.snid = snid
         self.get_frame_method = get_frame_method
         self.try_num = try_num
+        self.fps = fps
         time.sleep(0.1 * np.random.random())
         self.try_run(self.set_config_and_option)
 
@@ -47,8 +48,8 @@ class RealsenseCamera:
         with self.lock:
             # set config
             config = rs.config()
-            config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 6)
-            config.enable_stream(rs.stream.color, 1280, 720, rs.format.rgb8, 6)
+            config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, self.fps)
+            config.enable_stream(rs.stream.color, 1280, 720, rs.format.rgb8, self.fps)
             # config.enable_stream(rs.stream.infrared, 1, 1280, 720, rs.format.y8, 6)
             # config.enable_stream(rs.stream.infrared, 2, 1280, 720, rs.format.y8, 6)
             config.enable_device(self.snid)
