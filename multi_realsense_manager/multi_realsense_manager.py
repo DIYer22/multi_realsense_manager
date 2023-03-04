@@ -15,7 +15,9 @@ except ModuleNotFoundError:
 
 
 class RealsenseCamera:
-    def __init__(self, snid=None, get_frame_method="wait_for_frames", try_num=-1, fps=6):
+    def __init__(
+        self, snid=None, get_frame_method="wait_for_frames", try_num=-1, fps=6
+    ):
         if snid is None:
             snid = self.get_all_snids()[0]
         self.lock = Lock()
@@ -111,7 +113,8 @@ class RealsenseCamera:
         return np.asanyarray(frame.get_data())
 
     def try_run(
-        self, funcation,
+        self,
+        funcation,
     ):
         n = 0
         while True:
@@ -258,7 +261,7 @@ class MultiRealsenseManger(dict):
         init_kwargs : dict, optional
             Init kwargs for MetaRealsenseClass. The default is {}.
         dummy : bool, optional
-            If True, using multiprocess.dummy which is multi-threading. 
+            If True, using multiprocess.dummy which is multi-threading.
             The default is False.
         snids : list of str, optional
             List of snids. The default is self.get_all_snids().
@@ -314,22 +317,22 @@ class MultiRealsenseManger(dict):
 if __name__ == "__main__":
     """
     Robust multi-processing multi-realsense manager
-    
+
     Usage:
         1. Build a new class based on RealsenseCamera.
         2. Override set_config_and_option and post_processing method
             for custom config and processing.
-    
+
     Example:
         >>> class CustomRealsense(RealsenseCamera):
                 def set_config_and_option(self):
-                    # edit the config and option 
+                    # edit the config and option
                     # refer to RealsenseCamera.set_config_and_option
-                
+
                 def post_processing(self, frameset):
                     # edit the post processing for frameset
                     # refer to RealsenseCamera.post_processing
-                    return data        
+                    return data
     """
 
     # Example code
